@@ -57,6 +57,12 @@
           @action="openDirect"
         />
         <action
+          v-if="fileStore.req?.type === 'video'"
+          :icon="isMinimalSkin ? 'video_settings' : 'videocam'"
+          :label="isMinimalSkin ? 'Default skin' : 'Minimal skin'"
+          @action="isMinimalSkin = !isMinimalSkin"
+        />
+        <action
           :disabled="layoutStore.loading"
           icon="info"
           :label="$t('buttons.info')"
@@ -121,9 +127,8 @@
           ref="player"
           :source="previewUrl"
           :subtitles="subtitles"
-          :options="videoOptions"
-        >
-        </VideoPlayer>
+          :is-minimal="isMinimalSkin"
+        />
         <object v-else-if="isPdf" class="pdf" :data="previewUrl"></object>
         <div v-else-if="fileStore.req?.type == 'blob'" class="info">
           <div class="title">
@@ -260,6 +265,7 @@ const showNav = ref<boolean>(true);
 const navTimeout = ref<null | number>(null);
 const hoverNav = ref<boolean>(false);
 const autoPlay = ref<boolean>(false);
+const isMinimalSkin = ref<boolean>(false);
 const previousRaw = ref<string>("");
 const nextRaw = ref<string>("");
 const csvContent = ref<ArrayBuffer | string>("");
@@ -323,10 +329,6 @@ const subtitles = computed(() => {
     return api.getSubtitlesURL(fileStore.req);
   }
   return [];
-});
-
-const videoOptions = computed(() => {
-  return { autoplay: autoPlay.value };
 });
 
 watch(route, () => {

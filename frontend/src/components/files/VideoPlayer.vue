@@ -1,120 +1,104 @@
 <template>
-  <video ref="videoPlayer" class="video-max video-js" controls preload="auto">
-    <source />
-    <track
-      kind="subtitles"
-      v-for="(sub, index) in subtitles"
-      :key="index"
-      :src="sub"
-      :label="subLabel(sub)"
-      :default="index === 0"
-    />
-    <p class="vjs-no-js">
-      Sorry, your browser doesn't support embedded videos, but don't worry, you
-      can <a :href="source">download it</a>
-      and watch it with your favorite video player!
-    </p>
-  </video>
+  <div class="video-wrapper">
+    <component :is="'video-player'" :key="isMinimal ? 'minimal' : 'default'">
+      <component
+        :is="isMinimal ? 'video-minimal-skin' : 'video-skin'"
+        class="video-fill"
+        ref="skinEl"
+      >
+        <video preload="auto">
+          <source :src="source" :type="sourceType || undefined" />
+          <track
+            kind="subtitles"
+            v-for="(sub, index) in subtitles"
+            :key="index"
+            :src="sub"
+            :label="subLabel(sub)"
+            :default="index === 0"
+          />
+          <p class="vjs-no-js">
+            Sorry, your browser doesn't support embedded videos, but don't
+            worry, you can <a :href="source">download it</a> and watch it with
+            your favorite video player!
+          </p>
+        </video>
+      </component>
+    </component>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, nextTick } from "vue";
-import videojs from "video.js";
-import type Player from "video.js/dist/types/player";
-import "videojs-mobile-ui";
-import "videojs-hotkeys";
-import "video.js/dist/video-js.min.css";
-import "videojs-mobile-ui/dist/videojs-mobile-ui.css";
-
-const videoPlayer = ref<HTMLElement | null>(null);
-const player = ref<Player | null>(null);
+import { computed, nextTick, onMounted, ref, watch } from "vue";
+import "@videojs/html/video/skin";
+import "@videojs/html/video/skin.css";
+import "@videojs/html/video/minimal-skin";
+import "@videojs/html/video/minimal-skin.css";
 
 const props = withDefaults(
   defineProps<{
     source: string;
     subtitles?: string[];
-    options?: any;
+    isMinimal?: boolean;
   }>(),
   {
-    options: {},
+    isMinimal: false,
   }
 );
 
-const source = ref(props.source);
-const sourceType = ref("");
+const skinEl = ref<Element | null>(null);
 
-nextTick(() => {
-  initVideoPlayer();
-});
+const gradientSheet = new CSSStyleSheet();
+gradientSheet.replaceSync(
+  ".media-overlay { background-image: none !important; } :host { --media-border-radius: 0 !important; }"
+);
 
-onMounted(() => {});
-
-onBeforeUnmount(() => {
-  if (player.value) {
-    player.value.dispose();
-    player.value = null;
+function suppressGradient(el: Element | null) {
+  const root = (el as any)?.shadowRoot as ShadowRoot | null;
+  if (!root) return;
+  if (!root.adoptedStyleSheets.includes(gradientSheet)) {
+    root.adoptedStyleSheets = [...root.adoptedStyleSheets, gradientSheet];
   }
-});
+}
 
-const initVideoPlayer = async () => {
-  try {
-    const lang = document.documentElement.lang;
-    const languagePack = await (
-      languageImports[lang] || languageImports.en
-    )?.();
-    const code = languageImports[lang] ? lang : "en";
-    videojs.addLanguage(code, languagePack.default);
-    sourceType.value = "";
+const savedTime = ref(0);
+const savedPaused = ref(true);
 
-    //
-    sourceType.value = getSourceType(source.value);
+onMounted(() => suppressGradient(skinEl.value));
+watch(
+  () => props.isMinimal,
+  async () => {
+    const videoEl = skinEl.value?.querySelector(
+      "video"
+    ) as HTMLVideoElement | null;
+    savedTime.value = videoEl?.currentTime ?? 0;
+    savedPaused.value = videoEl?.paused ?? true;
+    videoEl?.pause();
 
-    const srcOpt = { sources: { src: props.source, type: sourceType.value } };
-    //Supporting localized language display.
-    const langOpt = { language: code };
-    // support for playback at different speeds.
-    const playbackRatesOpt = { playbackRates: [0.5, 1, 1.5, 2, 2.5, 3] };
-    const options = getOptions(
-      props.options,
-      langOpt,
-      srcOpt,
-      playbackRatesOpt
-    );
-    player.value = videojs(videoPlayer.value!, options, () => {});
+    await nextTick();
 
-    // TODO: need to test on mobile
-    // @ts-expect-error no ts definition for mobileUi
-    player.value!.mobileUi();
-  } catch (error) {
-    console.error("Error initializing video player:", error);
+    suppressGradient(skinEl.value);
+
+    const newVideoEl = skinEl.value?.querySelector(
+      "video"
+    ) as HTMLVideoElement | null;
+    if (!newVideoEl) return;
+
+    const restore = () => {
+      newVideoEl.currentTime = savedTime.value;
+      if (!savedPaused.value) newVideoEl.play().catch(() => {});
+    };
+
+    if (newVideoEl.readyState >= 1) {
+      restore();
+    } else {
+      newVideoEl.addEventListener("loadedmetadata", restore, { once: true });
+    }
   }
-};
+);
 
-const getOptions = (...srcOpt: any[]) => {
-  const options = {
-    controlBar: {
-      skipButtons: {
-        forward: 5,
-        backward: 5,
-      },
-    },
-    html5: {
-      nativeTextTracks: false,
-    },
-    plugins: {
-      hotkeys: {
-        volumeStep: 0.1,
-        seekStep: 10,
-        enableModifiersForNumbers: false,
-      },
-    },
-  };
+const sourceType = computed(() => getSourceType(props.source));
 
-  return videojs.obj.merge(options, ...srcOpt);
-};
-
-//  Attempting to fix the issue of being unable to play .MKV format video files
-const getSourceType = (source: string) => {
+const getSourceType = (source: string): string => {
   const fileExtension = source ? source.split("?")[0].split(".").pop() : "";
   if (fileExtension?.toLowerCase() === "mkv") {
     return "video/mp4";
@@ -127,59 +111,27 @@ const subLabel = (subUrl: string) => {
   try {
     url = new URL(subUrl);
   } catch {
-    // treat it as a relative url
-    // we only need this for filename
     url = new URL(subUrl, window.location.origin);
   }
 
-  const label = decodeURIComponent(
+  return decodeURIComponent(
     url.pathname
       .split("/")
       .pop()!
       .replace(/\.[^/.]+$/, "")
   );
-
-  return label;
-};
-
-interface LanguageImports {
-  [key: string]: () => Promise<any>;
-}
-
-const languageImports: LanguageImports = {
-  ar: () => import("video.js/dist/lang/ar.json"),
-  bg: () => import("video.js/dist/lang/bg.json"),
-  cs: () => import("video.js/dist/lang/cs.json"),
-  de: () => import("video.js/dist/lang/de.json"),
-  el: () => import("video.js/dist/lang/el.json"),
-  en: () => import("video.js/dist/lang/en.json"),
-  es: () => import("video.js/dist/lang/es.json"),
-  fr: () => import("video.js/dist/lang/fr.json"),
-  he: () => import("video.js/dist/lang/he.json"),
-  hr: () => import("video.js/dist/lang/hr.json"),
-  hu: () => import("video.js/dist/lang/hu.json"),
-  it: () => import("video.js/dist/lang/it.json"),
-  ja: () => import("video.js/dist/lang/ja.json"),
-  ko: () => import("video.js/dist/lang/ko.json"),
-  lv: () => import("video.js/dist/lang/lv.json"),
-  nb: () => import("video.js/dist/lang/nb.json"),
-  nl: () => import("video.js/dist/lang/nl.json"),
-  "nl-be": () => import("video.js/dist/lang/nl.json"),
-  pl: () => import("video.js/dist/lang/pl.json"),
-  "pt-br": () => import("video.js/dist/lang/pt-BR.json"),
-  "pt-pt": () => import("video.js/dist/lang/pt-PT.json"),
-  ro: () => import("video.js/dist/lang/ro.json"),
-  ru: () => import("video.js/dist/lang/ru.json"),
-  sk: () => import("video.js/dist/lang/sk.json"),
-  tr: () => import("video.js/dist/lang/tr.json"),
-  uk: () => import("video.js/dist/lang/uk.json"),
-  vi: () => import("video.js/dist/lang/vi.json"),
-  "zh-cn": () => import("video.js/dist/lang/zh-CN.json"),
-  "zh-tw": () => import("video.js/dist/lang/zh-TW.json"),
 };
 </script>
+
 <style scoped>
-.video-max {
+.video-wrapper {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.video-fill {
+  display: block;
   width: 100%;
   height: 100%;
 }
