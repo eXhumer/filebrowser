@@ -27,6 +27,8 @@
     "preview": "Preview",
     "publish": "Yayınla",
     "rename": "Yeniden anlandır",
+    "shuffleOff": "Karıştır: Kapalı",
+    "shuffleOn": "Karıştır: Açık",
     "replace": "Değiştir",
     "reportIssue": "Sorun bildir",
     "save": "Kaydet",

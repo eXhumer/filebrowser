@@ -27,6 +27,8 @@
     "preview": "Preview",
     "publish": "Publicar",
     "rename": "Alterar nome",
+    "shuffleOff": "Aleatório: Desativado",
+    "shuffleOn": "Aleatório: Ativado",
     "replace": "Substituir",
     "reportIssue": "Reportar erro",
     "save": "Guardar",

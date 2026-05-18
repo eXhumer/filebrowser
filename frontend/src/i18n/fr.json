@@ -27,6 +27,8 @@
     "preview": "Prévisualiser",
     "publish": "Publier",
     "rename": "Renommer",
+    "shuffleOff": "Aléatoire : Désactivé",
+    "shuffleOn": "Aléatoire : Activé",
     "replace": "Remplacer",
     "reportIssue": "Signaler un problème",
     "resumeTransfer": "Reprendre un transfert précedement interrompu",

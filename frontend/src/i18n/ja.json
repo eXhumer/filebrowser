@@ -27,6 +27,8 @@
     "preview": "Preview",
     "publish": "公開",
     "rename": "名前の変更",
+    "shuffleOff": "シャッフル: オフ",
+    "shuffleOn": "シャッフル: オン",
     "replace": "置換する",
     "reportIssue": "問題を報告",
     "save": "保存",

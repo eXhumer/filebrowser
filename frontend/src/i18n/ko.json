@@ -27,6 +27,8 @@
     "preview": "미리보기",
     "publish": "게시",
     "rename": "이름 바꾸기",
+    "shuffleOff": "셔플: 끄기",
+    "shuffleOn": "셔플: 켜기",
     "replace": "대체",
     "reportIssue": "문제 보고",
     "save": "저장",

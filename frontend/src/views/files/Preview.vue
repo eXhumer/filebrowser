@@ -63,6 +63,12 @@
           @action="isMinimalSkin = !isMinimalSkin"
         />
         <action
+          v-if="hasPrevious || hasNext"
+          icon="shuffle"
+          :label="shuffle ? $t('buttons.shuffleOn') : $t('buttons.shuffleOff')"
+          @action="shuffle = !shuffle"
+        />
+        <action
           :disabled="layoutStore.loading"
           icon="info"
           :label="$t('buttons.info')"
@@ -268,6 +274,7 @@ const autoPlay = ref<boolean>(false);
 const isMinimalSkin = ref<boolean>(false);
 const previousRaw = ref<string>("");
 const nextRaw = ref<string>("");
+const shuffle = useStorage("previewShuffle", false);
 const csvContent = ref<ArrayBuffer | string>("");
 const csvError = ref<string>("");
 
@@ -371,14 +378,33 @@ const deleteFile = () => {
   });
 };
 
+const randomMediaLink = (): string => {
+  if (!listing.value) return "";
+  const mediaItems = listing.value.filter(
+    (item) => mediaTypes.includes(item.type) && item.name !== name.value
+  );
+  if (mediaItems.length === 0) return "";
+  return mediaItems[Math.floor(Math.random() * mediaItems.length)].url;
+};
+
 const prev = () => {
   hoverNav.value = false;
-  router.replace({ path: previousLink.value });
+  if (shuffle.value) {
+    const link = randomMediaLink();
+    if (link) router.replace({ path: link });
+  } else {
+    router.replace({ path: previousLink.value });
+  }
 };
 
 const next = () => {
   hoverNav.value = false;
-  router.replace({ path: nextLink.value });
+  if (shuffle.value) {
+    const link = randomMediaLink();
+    if (link) router.replace({ path: link });
+  } else {
+    router.replace({ path: nextLink.value });
+  }
 };
 
 const key = (event: KeyboardEvent) => {

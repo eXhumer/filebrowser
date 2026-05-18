@@ -27,6 +27,8 @@
     "preview": "Preview",
     "publish": "Publicar",
     "rename": "Renombrar",
+    "shuffleOff": "Orden aleatorio: Desactivado",
+    "shuffleOn": "Orden aleatorio: Activado",
     "replace": "Reemplazar",
     "reportIssue": "Reportar problema",
     "save": "Guardar",

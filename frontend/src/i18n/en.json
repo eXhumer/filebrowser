@@ -27,6 +27,8 @@
     "preview": "Preview",
     "publish": "Publish",
     "rename": "Rename",
+    "shuffleOff": "Shuffle: Off",
+    "shuffleOn": "Shuffle: On",
     "replace": "Replace",
     "reportIssue": "Report Issue",
     "resumeTransfer": "Resume previous transfert",

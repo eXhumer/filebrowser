@@ -27,6 +27,8 @@
     "preview": "预览",
     "publish": "发布",
     "rename": "重命名",
+    "shuffleOff": "随机播放：关",
+    "shuffleOn": "随机播放：开",
     "replace": "替换",
     "reportIssue": "报告问题",
     "save": "保存",
